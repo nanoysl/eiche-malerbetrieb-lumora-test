@@ -809,3 +809,4 @@ window.addEventListener("scroll", updateNav, { passive: true });
 window.addEventListener("popstate", render);
 
 render();
+
