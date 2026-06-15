@@ -19,6 +19,23 @@ const images = {
   serviceCare: "https://www.eiche-malerbetrieb.de/files/images/service-wartung.jpg"
 };
 
+const BASE_PATH = window.location.pathname.indexOf("/eiche-malerbetrieb-lumora-test") === 0
+  ? "/eiche-malerbetrieb-lumora-test"
+  : "";
+
+function sitePath(path) {
+  if (!path || path === "/") return BASE_PATH || "/";
+  return `${BASE_PATH}${path}`;
+}
+
+function routePathFromLocation() {
+  let path = window.location.pathname;
+  if (BASE_PATH && path.indexOf(BASE_PATH) === 0) {
+    path = path.slice(BASE_PATH.length) || "/";
+  }
+  return path.replace(/\/$/, "") || "/";
+}
+
 const team = [
   ["Roland Eiche", "Meister und Restaurator im Malerhandwerk", "https://www.eiche-malerbetrieb.de/assets/images/e/Roland-Eiche-2025-f2f7e52d.jpg"],
   ["Katharina Eiche", "Geschäftsführung und Personalentwicklung", "https://www.eiche-malerbetrieb.de/assets/images/1/Katharina-Eiche-2025-5042fa3c.jpg"],
@@ -167,34 +184,35 @@ let testimonialIndex = 0;
 let faqCategory = "allgemein";
 
 function route(path) {
-  if (path === window.location.pathname && !window.location.hash) return;
-  history.pushState({}, "", path);
+  const target = sitePath(path);
+  if (target === window.location.pathname && !window.location.hash) return;
+  history.pushState({}, "", target);
   render();
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
 function isCurrent(path) {
-  return window.location.pathname === path ? " aria-current=\"page\"" : "";
+  return routePathFromLocation() === path ? " aria-current=\"page\"" : "";
 }
 
 function nav() {
   return `
     <header class="site-nav" data-nav>
       <div class="nav-inner">
-        <a class="brand-link" href="/" data-link${isCurrent("/")}>
+        <a class="brand-link" href="${sitePath("/")}" data-route="/" data-link${isCurrent("/")}>
           <span class="brand-mark" aria-hidden="true"></span>
           <span class="brand-text">EICHE <small>Meisterbetrieb</small></span>
         </a>
         <nav class="nav-links" aria-label="Hauptnavigation">
-          <a href="/" data-link${isCurrent("/")}>Start</a>
-          <a href="/leistungen" data-link${isCurrent("/leistungen")}>Farb-Projekte</a>
-          <a href="/team" data-link${isCurrent("/team")}>Farb-Profis</a>
-          <a href="/farbwelten" data-link${isCurrent("/farbwelten")}>Farb-Welten</a>
-          <a href="/kontakt" data-link${isCurrent("/kontakt")}>Kontakt</a>
+          <a href="${sitePath("/")}" data-route="/" data-link${isCurrent("/")}>Start</a>
+          <a href="${sitePath("/leistungen")}" data-route="/leistungen" data-link${isCurrent("/leistungen")}>Farb-Projekte</a>
+          <a href="${sitePath("/team")}" data-route="/team" data-link${isCurrent("/team")}>Farb-Profis</a>
+          <a href="${sitePath("/farbwelten")}" data-route="/farbwelten" data-link${isCurrent("/farbwelten")}>Farb-Welten</a>
+          <a href="${sitePath("/kontakt")}" data-route="/kontakt" data-link${isCurrent("/kontakt")}>Kontakt</a>
         </nav>
         <div class="nav-actions">
           <a class="nav-phone" href="tel:+49242181325">+49 2421 81325</a>
-          <a class="btn btn-light" href="/kontakt" data-link>Projekt anfragen</a>
+          <a class="btn btn-light" href="${sitePath("/kontakt")}" data-route="/kontakt" data-link>Projekt anfragen</a>
           <button class="menu-button" type="button" data-menu-open aria-label="Menü öffnen">
             <span></span><span></span><span></span>
           </button>
@@ -204,11 +222,11 @@ function nav() {
     <div class="mobile-menu" data-mobile-menu>
       <button class="mobile-menu__close" type="button" data-menu-close aria-label="Menü schließen">×</button>
       <nav class="mobile-menu__links" aria-label="Mobile Navigation">
-        <a href="/" data-link>Start</a>
-        <a href="/leistungen" data-link>Farb-Projekte</a>
-        <a href="/team" data-link>Farb-Profis</a>
-        <a href="/farbwelten" data-link>Farb-Welten</a>
-        <a href="/kontakt" data-link>Kontakt</a>
+        <a href="${sitePath("/")}" data-route="/" data-link>Start</a>
+        <a href="${sitePath("/leistungen")}" data-route="/leistungen" data-link>Farb-Projekte</a>
+        <a href="${sitePath("/team")}" data-route="/team" data-link>Farb-Profis</a>
+        <a href="${sitePath("/farbwelten")}" data-route="/farbwelten" data-link>Farb-Welten</a>
+        <a href="${sitePath("/kontakt")}" data-route="/kontakt" data-link>Kontakt</a>
       </nav>
     </div>
   `;
@@ -658,7 +676,7 @@ function simplePage(routeData) {
 }
 
 function renderRoute() {
-  const path = window.location.pathname.replace(/\/$/, "") || "/";
+  const path = routePathFromLocation();
   const detail = services.find((service) => service.path === path);
   if (path === "/") return homePage();
   if (path === "/leistungen") return servicesPage();
@@ -693,11 +711,16 @@ function render() {
 
 function bindInteractions() {
   document.querySelectorAll("a[data-link]").forEach((link) => {
+    const rawHref = link.getAttribute("href");
+    if (rawHref && rawHref.startsWith("/") && !(BASE_PATH && rawHref.startsWith(BASE_PATH))) {
+      link.setAttribute("href", sitePath(rawHref));
+    }
     link.addEventListener("click", (event) => {
       const href = link.getAttribute("href");
       if (!href || href.startsWith("http") || href.startsWith("mailto:") || href.startsWith("tel:")) return;
       event.preventDefault();
-      route(href);
+      const nextPath = BASE_PATH && href.indexOf(BASE_PATH) === 0 ? href.slice(BASE_PATH.length) || "/" : href;
+      route(nextPath);
     });
   });
 
